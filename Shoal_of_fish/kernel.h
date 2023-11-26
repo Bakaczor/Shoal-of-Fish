@@ -14,7 +14,6 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <cuda_gl_interop.h>
 #include <device_launch_parameters.h>
 
 #include <glm/glm.hpp>
@@ -41,47 +40,49 @@ namespace Global {
 
     struct Parameters {
         // NIEZMIENIALNE
-        const float DT = 0.1f;
-        const float MIN_VEL = 0.5f;
-        const float MAX_VEL = 2.0f;
+        const float DT = 0.2f;
+        const float MIN_VEL = 0.005f;
+        const float MAX_VEL = 0.01f;
+        const int WIDTH = 1280;
+        const int HEIGHT = 720;
 
         struct Bounds {
             const int MIN_X = 0;
             const int MIN_Y = 0;
-            const int MAX_X = 100;
-            const int MAX_Y = 100;
+            const int MAX_X = 1;
+            const int MAX_Y = 1;
+            const float SCALE = 1.0f;
         } BOUNDS;
 
         // ZMIENIALNE PRZY INICJALIZACJI
-        bool VISUALIZE = false;
-        int SHOAL_NUM = 5;
+        bool VISUALIZE = true;
+        int SHOAL_NUM = 10;
         int FISH_NUM = 1000;
-        int WIDTH = 1280;
-        int HEIGHT = 720;
         int CELL_N = 50;
 
         // USTAWIANE AUTOMATYCZNIE
-        float CELL_LEN = 2.0f;
-        float CELL_LEN_INV = 0.5f;
+        float CELL_LEN = 0.02f;
+        float CELL_LEN_INV = 50.0f;
 
         // ZMIENIALNE W TRAKCIE
-        float R = 1.0f; // from 0 up to CELL_LEN
-        float COS_PHI = 0.0f; // from -1 to 1
-        float W_SEP = 0.5f; // from 0 to 1
+        float R = 0.01f; // from 0 up to CELL_LEN
+        float COS_PHI = 0.5f; // from -1 to 1
+        float W_SEP = 0.3f; // from 0 to 1
         float W_ALI = 0.5f; // from 0 to 1
-        float W_COH = 0.5f; // from 0 to 1
+        float W_COH = 0.3f; // from 0 to 1
         //float BH_X; 
         //float BH_Y;
         //float W_BH;
 
         void setCELL_N(int cell_n) {
             CELL_N = cell_n;
-            CELL_LEN = (BOUNDS.MAX_X - BOUNDS.MIN_X) / CELL_LEN;
+            CELL_LEN = BOUNDS.SCALE / CELL_LEN;
             CELL_LEN_INV = 1 / CELL_LEN;
         }
     };
 
-    void initSimulation(const int& N, const int& M, const int& shoals, const int& scale, Tables& tabs);
+    void initSimulation(const Parameters& params, Tables& tabs);
     void stepSimulation(const Parameters& params, Tables& tabs);
+    void copyToVBO(const Parameters& params, Tables& tabs, float* d_vboPositions, float* d_vboVelocities);
     void endSimulation(Tables& tabs);
 }

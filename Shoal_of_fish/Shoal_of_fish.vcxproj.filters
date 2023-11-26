@@ -7,6 +7,9 @@
     <Filter Include="Sources">
       <UniqueIdentifier>{2b409ca6-30fe-4b10-9b8f-6b52717abeb0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{c9de29ad-9c44-4f1e-ba93-836650fc0674}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glslUtility.cpp">
@@ -31,5 +34,13 @@
     <ClInclude Include="main.h">
       <Filter>Headers</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\vert.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

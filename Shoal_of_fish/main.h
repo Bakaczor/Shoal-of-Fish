@@ -8,10 +8,33 @@
 #include <cmath>
 #include <optional>
 
+#define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <cuda_gl_interop.h>
+
 #include "kernel.h"
+#include "glslUtility.hpp"
+
+/**********
+* OpenGL *
+**********/
+
+struct GL {
+
+	GLuint posLocation = 0;
+	GLuint velLocation = 1;
+	const char* attributeLocations[2] = { "Position", "Velocity" };
+
+	GLuint fishVAO = 0;
+	GLuint fishVBO_pos = 0;
+	GLuint fishVBO_vel = 0;
+	GLuint fishIBO = 0;
+	GLuint displayImage = 0;
+	GLuint program = 0;
+};
+
 
 /********
 * Main *
@@ -21,12 +44,19 @@ int main(int argc, char* argv[]);
 /******************
 * Initialization *
 ******************/
-bool init(int argc, char* argv[], Global::Parameters& params, Global::Tables& tabs);
 std::optional<std::string> getTitle();
+bool init(int argc, char* argv[], Global::Parameters& params, Global::Tables& tabs, GL& glProperties);
+void initVAO(const int& N, GL& glProperties);
+void initShaders(GL& glProperties);
 
 /*************
 * Main Loop *
 *************/
-void mainLoop(Global::Parameters& params, Global::Tables& tabs);
-void run(Global::Parameters& params, Global::Tables& tabs);
+void mainLoop(Global::Parameters& params, Global::Tables& tabs, GL& glProperties);
+void run(Global::Parameters& params, Global::Tables& tabs, GL& glProperties);
+
+void errorCallback(int error, const char* description);
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+void mousePositionCallback(GLFWwindow* window, double xpos, double ypos);
 
