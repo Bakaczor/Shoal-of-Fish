@@ -23,13 +23,17 @@
 
 struct GL {
 
-	GLuint posLocation = 0;
-	GLuint velLocation = 1;
-	const char* attributeLocations[2] = { "Position", "Velocity" };
+	//GLuint posLocation = 0;
+	//GLuint velLocation = 1;
+	//const char* attributeLocations[2] = { "Position", "Velocity" };
+
+	GLuint triLocation = 0;
+	const char* attributeLocations[1] = { "Triangle" };
 
 	GLuint fishVAO = 0;
-	GLuint fishVBO_pos = 0;
-	GLuint fishVBO_vel = 0;
+	GLuint fishVBO_tri = 0;
+	//GLuint fishVBO_pos = 0;
+	//GLuint fishVBO_vel = 0;
 	GLuint fishIBO = 0;
 	GLuint program = 0;
 

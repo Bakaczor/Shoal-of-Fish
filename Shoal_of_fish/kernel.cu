@@ -332,6 +332,35 @@ void Global::stepSimulation(const Parameters& params, Tables& tabs) {
  * copyToVBO *
  **************/
 
+
+
+__global__ void k_copyTriangleToVBO(int N, glm::vec2* pos, glm::vec2* vel, float* vbo) {
+    const int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= N) return;
+    glm::vec2 posScaled = 2.0f * pos[index] - 1.0f;
+    glm::vec2 velNormed = 0.01f * glm::normalize(vel[index]);
+    glm::vec2 p1 = posScaled + 0.5f * glm::vec2(-velNormed.y, velNormed.x);
+    glm::vec2 p2 = posScaled + 2.0f * velNormed;
+    glm::vec2 p3 = posScaled + 0.5f * glm::vec2(velNormed.y, -velNormed.x);
+    vbo[6 * index + 0] = p1.x;
+    vbo[6 * index + 1] = p1.y;
+    vbo[6 * index + 2] = p2.x;
+    vbo[6 * index + 3] = p2.y;
+    vbo[6 * index + 4] = p3.x;
+    vbo[6 * index + 5] = p3.y;
+}
+
+void Global::copyTrianglesToVBO(const Parameters& params, Tables& tabs, float* d_vboTriangles) {
+    const dim3 blocksPerGrid((params.FISH_NUM + 1) / blockSize);
+
+    k_copyTriangleToVBO << <blocksPerGrid, threadsPerBlock >> > (params.FISH_NUM, tabs.d_pos, tabs.d_vel, d_vboTriangles);
+    // and later also shoalId
+
+    checkCUDAError("copyTrianglesToVBO failed!", __LINE__);
+    cudaDeviceSynchronize();
+}
+
+/*
 __global__ void k_copyTabToVBO(int N, glm::vec2* tab, float* vbo) {
     const int index = (blockIdx.x * blockDim.x) + threadIdx.x;
     if (index >= N) return;
@@ -349,6 +378,7 @@ void Global::copyToVBO(const Parameters& params, Tables& tabs, float* d_vboPosit
     checkCUDAError("copyToVBO failed!", __LINE__);
     cudaDeviceSynchronize();
 }
+*/
 
 /******************
 * endSimulation *

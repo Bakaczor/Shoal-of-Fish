@@ -41,8 +41,8 @@ namespace Global {
     struct Parameters {
         // NIEZMIENIALNE
         const float DT = 0.2f;
-        const float MIN_VEL = 0.0001f;
-        const float MAX_VEL = 0.001f;
+        const float MIN_VEL = 0.0005f;
+        const float MAX_VEL = 0.005f;
         const int WIDTH = 1280;
         const int HEIGHT = 720;
 
@@ -56,7 +56,7 @@ namespace Global {
 
         // ZMIENIALNE PRZY INICJALIZACJI
         bool VISUALIZE = true;
-        int SHOAL_NUM = 1;
+        int SHOAL_NUM = 3;
         int FISH_NUM = 1000;
         int CELL_N = 50;
 
@@ -65,11 +65,11 @@ namespace Global {
         float CELL_LEN_INV = 50.0f;
 
         // ZMIENIALNE W TRAKCIE
-        float R = 0.01f; // from 0 up to CELL_LEN
-        float COS_PHI = 0.66f; // from -1 to 1
-        float W_SEP = 0.5f; // from 0 to 1
-        float W_ALI = 0.5f; // from 0 to 1
-        float W_COH = 0.5f; // from 0 to 1
+        float R = 0.005f; // from 0 up to CELL_LEN
+        float COS_PHI = 0.7f; // from -1 to 1
+        float W_SEP = 0.4f; // from 0 to 1
+        float W_ALI = 0.6f; // from 0 to 1
+        float W_COH = 0.6f; // from 0 to 1
         //float BH_X; 
         //float BH_Y;
         //float W_BH;
@@ -83,6 +83,7 @@ namespace Global {
 
     void initSimulation(const Parameters& params, Tables& tabs);
     void stepSimulation(const Parameters& params, Tables& tabs);
-    void copyToVBO(const Parameters& params, Tables& tabs, float* d_vboPositions, float* d_vboVelocities);
+    //void copyToVBO(const Parameters& params, Tables& tabs, float* d_vboPositions, float* d_vboVelocities);
+    void copyTrianglesToVBO(const Parameters& params, Tables& tabs, float* d_vboTriangles);
     void endSimulation(Tables& tabs);
 }
