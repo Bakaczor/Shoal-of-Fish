@@ -41,8 +41,8 @@ namespace Global {
     struct Parameters {
         // NIEZMIENIALNE
         const float DT = 0.2f;
-        const float MIN_VEL = 0.005f;
-        const float MAX_VEL = 0.01f;
+        const float MIN_VEL = 0.0001f;
+        const float MAX_VEL = 0.001f;
         const int WIDTH = 1280;
         const int HEIGHT = 720;
 
@@ -56,7 +56,7 @@ namespace Global {
 
         // ZMIENIALNE PRZY INICJALIZACJI
         bool VISUALIZE = true;
-        int SHOAL_NUM = 10;
+        int SHOAL_NUM = 1;
         int FISH_NUM = 1000;
         int CELL_N = 50;
 
@@ -66,10 +66,10 @@ namespace Global {
 
         // ZMIENIALNE W TRAKCIE
         float R = 0.01f; // from 0 up to CELL_LEN
-        float COS_PHI = 0.5f; // from -1 to 1
-        float W_SEP = 0.3f; // from 0 to 1
+        float COS_PHI = 0.66f; // from -1 to 1
+        float W_SEP = 0.5f; // from 0 to 1
         float W_ALI = 0.5f; // from 0 to 1
-        float W_COH = 0.3f; // from 0 to 1
+        float W_COH = 0.5f; // from 0 to 1
         //float BH_X; 
         //float BH_Y;
         //float W_BH;

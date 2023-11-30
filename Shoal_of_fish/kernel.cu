@@ -27,7 +27,7 @@ const dim3 threadsPerBlock(blockSize);
 * initSimulation *
 ******************/
 
-__host__ __device__ glm::vec2 d_generateRandomVec2(const int& time, const int& index, const float& a, const float& b) {
+__host__ __device__ glm::vec2 d_generateRandomVec2(const long& time, const int& index, const float& a, const float& b) {
     thrust::minstd_rand rng(index * time);
     thrust::uniform_real_distribution<float> U(a, b);
     return glm::vec2(U(rng), U(rng));
@@ -41,7 +41,7 @@ __global__ void k_generateRandomFloatArray(long time, int N, float a, float b, g
     array[index].y = rand.y;
 }
 
-__host__ __device__ uint d_generateRandomUint(const int& time, const int& index, const int& scale) {
+__host__ __device__ uint d_generateRandomUint(const long& time, const int& index, const int& scale) {
     thrust::minstd_rand rng(index * time);
     thrust::uniform_real_distribution<uint> U(0, scale);
     return U(rng);
@@ -92,10 +92,10 @@ void Global::initSimulation(const Parameters& params, Tables& tabs) {
     cudaMalloc(reinterpret_cast<void**>(&tabs.d_newVel), N * sizeof(glm::vec2));
     checkCUDAError("cudaMalloc d_newVel failed!", __LINE__);
 
-    long duration = (hrClock::now() - time).count();
-
-    k_generateRandomFloatArray <<< blocksPerGrid, threadsPerBlock >>> (duration, N, params.BOUNDS.MIN_X, params.BOUNDS.MAX_X, tabs.d_pos);
-    k_generateRandomFloatArray <<< blocksPerGrid, threadsPerBlock >>> (duration, N, -0.1, 0.1, tabs.d_vel);
+    long long duration = (hrClock::now() - time).count();
+    const float max_6 = params.BOUNDS.MAX_X / 6.0f;
+    k_generateRandomFloatArray <<< blocksPerGrid, threadsPerBlock >>> (duration, N, max_6, 5 * max_6, tabs.d_pos);
+    k_generateRandomFloatArray <<< blocksPerGrid, threadsPerBlock >>> (duration, N, -params.MAX_VEL, params.MAX_VEL, tabs.d_vel);
     checkCUDAError("k_generateRandomFloatArray failed!", __LINE__);
 
     k_generateRandomUintArray <<<blocksPerGrid, threadsPerBlock >>> (duration, N, params.SHOAL_NUM, tabs.d_shoalId);
@@ -174,9 +174,9 @@ __global__ void k_AssignCellStartEnd(int N, uint* cellIndices, int* cellStarts, 
 __host__ __device__ glm::vec2 d_reflectVelocity(const glm::vec2& vel, const float& val, const float& min, const float& max, const bool& side) {
     if (val < min || val > max) {
         if (side) {
-            return glm::vec2(-vel.x, vel.y);
+            return 10.0f * glm::vec2(-vel.x, vel.y);
         } else {
-            return glm::vec2(vel.x, -vel.y);
+            return 10.0f * glm::vec2(vel.x, -vel.y);
         }
     }
     return vel;
@@ -226,7 +226,7 @@ __global__ void k_updateVelocity(Global::Parameters params, int* cellStarts, int
                         ++count;
                     } else
                     {
-                        separation -= vector / (2 * distance * distance);
+                        separation -= 10.0f * vector / (distance * distance);
                     }
                 }
             }
@@ -265,11 +265,13 @@ __global__ void k_updateVelocity(Global::Parameters params, int* cellStarts, int
 
 __host__ __device__ float d_reflect(float val, const float& min, const float& max) {
     if (val < min) {
-        float newVal = min + (min - val);
-        val = newVal > max ? min : newVal;
+        //float newVal = min + (min - val);
+        //val = newVal > max ? min + 1.0E-16f : newVal;
+        val = min + 1.0E-16f;
     } else if (val > max) {
-        float newVal = max - (val - max);
-        val = newVal < min ? max : newVal;
+        //float newVal = max - (val - max);
+        //val = newVal < min ? max - 1.0E-16f : newVal;
+        val = max - 1.0E-16f;
     }
     return val;
 }
@@ -287,6 +289,7 @@ void Global::stepSimulation(const Parameters& params, Tables& tabs) {
     const dim3 blocksPerGrid_M((M + 1) / blockSize);
     
     k_AssignIds <<< blocksPerGrid_N, threadsPerBlock >>> (N, params.CELL_N, params.CELL_LEN_INV, tabs.d_pos, tabs.d_fishId, tabs.d_cellId);
+    cudaDeviceSynchronize();
 
     auto t_fishId = thrust::device_pointer_cast(tabs.d_fishId);
     auto t_cellId = thrust::device_pointer_cast(tabs.d_cellId);
@@ -294,7 +297,10 @@ void Global::stepSimulation(const Parameters& params, Tables& tabs) {
 
     k_resetTable <<< blocksPerGrid_M, threadsPerBlock >>> (M, tabs.d_cellStart);
     k_resetTable <<< blocksPerGrid_M, threadsPerBlock >>> (M, tabs.d_cellEnd);
+    cudaDeviceSynchronize();
+
     k_AssignCellStartEnd <<< blocksPerGrid_N, threadsPerBlock >>> (N, tabs.d_cellId, tabs.d_cellStart, tabs.d_cellEnd);
+    cudaDeviceSynchronize();
 
     auto t_pos = thrust::device_pointer_cast(tabs.d_pos);
     auto t_vel = thrust::device_pointer_cast(tabs.d_vel);
@@ -308,6 +314,7 @@ void Global::stepSimulation(const Parameters& params, Tables& tabs) {
     thrust::gather(t_fishId, t_fishId + N, t_shoalId, t_shoalId_g);
 
     k_updateVelocity <<< blocksPerGrid_N, threadsPerBlock >>> (params, tabs.d_cellStart, tabs.d_cellEnd, tabs.d_pos_g, tabs.d_vel_g, tabs.d_shoalId_g, tabs.d_newVel);
+    cudaDeviceSynchronize();
 
     const float& dt = params.DT;
     const Parameters::Bounds& bounds = params.BOUNDS;
@@ -338,6 +345,7 @@ void Global::copyToVBO(const Parameters& params, Tables& tabs, float* d_vboPosit
     k_copyTabToVBO << <blocksPerGrid, threadsPerBlock >> > (params.FISH_NUM, tabs.d_pos, d_vboPositions);
     k_copyTabToVBO << <blocksPerGrid, threadsPerBlock >> > (params.FISH_NUM, tabs.d_vel, d_vboVelocities);
     // and later also shoalId
+
     checkCUDAError("copyToVBO failed!", __LINE__);
     cudaDeviceSynchronize();
 }

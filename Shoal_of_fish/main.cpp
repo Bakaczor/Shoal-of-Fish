@@ -7,10 +7,11 @@
 int main(int argc, char* argv[]) {
     Global::Parameters params;
     Global::Tables tabs;
-    GL glProperties;
-    if (init(argc, argv, params, tabs, glProperties)) {
-        mainLoop(params, tabs, glProperties);
+    GL props;
+    if (init(argc, argv, params, tabs, props)) {
+        mainLoop(params, tabs, props);
         Global::endSimulation(tabs);
+        glfwTerminate();
         return 0;
     } else { return 1; }
 }
@@ -18,9 +19,6 @@ int main(int argc, char* argv[]) {
 /******************
 * Initialization *
 ******************/
-
-GLFWwindow* window = nullptr;
-std::string windowTitle;
 
 std::optional<std::string> getTitle() {
     cudaDeviceProp deviceProp;
@@ -43,12 +41,12 @@ std::optional<std::string> getTitle() {
     return ss.str();
 }
 
-bool init(int argc, char* argv[], Global::Parameters& params, Global::Tables& tabs, GL& glProperties) {
+bool init(int argc, char* argv[], Global::Parameters& params, Global::Tables& tabs, GL& props) {
     
     // TODO : reading from console
     std::optional<std::string> title = getTitle();
     if (title.has_value()) {
-        windowTitle = title.value();
+        props.windowTitle = title.value();
     } else {
         return false;
     }
@@ -66,33 +64,34 @@ bool init(int argc, char* argv[], Global::Parameters& params, Global::Tables& ta
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(params.WIDTH, params.HEIGHT, windowTitle.c_str(), nullptr, nullptr);
-    if (!window) {
+    props.window = glfwCreateWindow(params.WIDTH, params.HEIGHT, props.windowTitle.c_str(), nullptr, nullptr);
+    if (!props.window) {
         glfwTerminate();
         return false;
     }
-    glfwMakeContextCurrent(window);
-    glfwSetKeyCallback(window, keyCallback);
-    glfwSetCursorPosCallback(window, mousePositionCallback);
-    glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwMakeContextCurrent(props.window);
+    glfwSetFramebufferSizeCallback(props.window, frameSizeCallback);
+    glfwSetKeyCallback(props.window, keyCallback);
+    glfwSetCursorPosCallback(props.window, mousePositionCallback);
+    glfwSetMouseButtonCallback(props.window, mouseButtonCallback);
 
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) { return false; }
 
-    initVAO(params.FISH_NUM, glProperties);
+    initVAO(params.FISH_NUM, props);
 
     cudaGLSetGLDevice(0);
-    cudaGLRegisterBufferObject(glProperties.fishVBO_pos);
-    cudaGLRegisterBufferObject(glProperties.fishVBO_vel);
+    cudaGLRegisterBufferObject(props.fishVBO_pos);
+    cudaGLRegisterBufferObject(props.fishVBO_vel);
 
     Global::initSimulation(params, tabs);
 
-    initShaders(glProperties);
+    initShaders(props);
     glEnable(GL_DEPTH_TEST);
     return true;
 }
 
-void initVAO(const int& N, GL& glProperties) {
+void initVAO(const int& N, GL& props) {
     std::unique_ptr<GLfloat[]> bodies(new GLfloat[2 * N]);
     std::unique_ptr<GLuint[]> bindices(new GLuint[N]);
 
@@ -102,61 +101,60 @@ void initVAO(const int& N, GL& glProperties) {
         bindices[i] = i;
     }
 
-    glGenVertexArrays(1, &glProperties.fishVAO); // Attach everything needed to draw a particle to this
-    glGenBuffers(1, &glProperties.fishVBO_pos);
-    glGenBuffers(1, &glProperties.fishVBO_vel);
-    glGenBuffers(1, &glProperties.fishIBO);
+    glGenVertexArrays(1, &props.fishVAO); // Attach everything needed to draw to this id array
+    glGenBuffers(1, &props.fishVBO_pos);
+    glGenBuffers(1, &props.fishVBO_vel);
+    glGenBuffers(1, &props.fishIBO);
 
-    glBindVertexArray(glProperties.fishVAO);
+    glBindVertexArray(props.fishVAO);
 
     // Bind the positions array to the boidVAO by way of the boidVBO_positions
-    glBindBuffer(GL_ARRAY_BUFFER, glProperties.fishVBO_pos); // bind the buffer
+    glBindBuffer(GL_ARRAY_BUFFER, props.fishVBO_pos); // bind the buffer
     glBufferData(GL_ARRAY_BUFFER, 2 * N * sizeof(GLfloat), bodies.get(), GL_DYNAMIC_DRAW); // transfer data
-
-    glEnableVertexAttribArray(glProperties.posLocation);
-    glVertexAttribPointer(glProperties.posLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(props.posLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(props.posLocation);
 
     // Bind the velocities array to the boidVAO by way of the boidVBO_velocities
-    glBindBuffer(GL_ARRAY_BUFFER, glProperties.fishVBO_vel);
+    glBindBuffer(GL_ARRAY_BUFFER, props.fishVBO_vel);
     glBufferData(GL_ARRAY_BUFFER, 2 * N * sizeof(GLfloat), bodies.get(), GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(glProperties.velLocation);
-    glVertexAttribPointer(glProperties.velLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(props.velLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(props.velLocation);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glProperties.fishIBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, props.fishIBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, N * sizeof(GLuint), bindices.get(), GL_STATIC_DRAW);
 
     glBindVertexArray(0);
 }
 
-void initShaders(GL& glProperties) {
-    glProperties.program = glslUtility::createProgram("shaders/vert.glsl", "shaders/frag.glsl", glProperties.attributeLocations, 2);
-    glUseProgram(glProperties.program);
+void initShaders(GL& props) {
+    props.program = glslUtility::createProgram("shaders/vert.glsl", "shaders/frag.glsl", props.attributeLocations, 2);
+    glUseProgram(props.program);
 }
 
 /*************
 * Main Loop *
 *************/
-void run(Global::Parameters& params, Global::Tables& tabs, GL& glProperties) {
+void runSimulation(Global::Parameters& params, Global::Tables& tabs, GL& props) {
     float* d_vboPositions = nullptr;
     float* d_vboVelocities = nullptr;
-    cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboPositions), glProperties.fishVBO_pos);
-    cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboVelocities), glProperties.fishVBO_vel);
+    cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboPositions), props.fishVBO_pos);
+    cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboVelocities), props.fishVBO_vel);
 
     Global::stepSimulation(params, tabs);
     if (params.VISUALIZE) {
         Global::copyToVBO(params, tabs, d_vboPositions, d_vboVelocities);
     }
 
-    cudaGLUnmapBufferObject(glProperties.fishVBO_pos);
-    cudaGLUnmapBufferObject(glProperties.fishVBO_vel);
+    cudaGLUnmapBufferObject(props.fishVBO_pos);
+    cudaGLUnmapBufferObject(props.fishVBO_vel);
 }
 
-void mainLoop(Global::Parameters& params, Global::Tables& tabs, GL& glProperties) {
+void mainLoop(Global::Parameters& params, Global::Tables& tabs, GL& props) {
     double fps = 0;
     int frame = 0;
     double timebase = 0;
 
-    while (!glfwWindowShouldClose(window)) {
+    while (!glfwWindowShouldClose(props.window)) {
         glfwPollEvents();
 
         frame++;
@@ -168,20 +166,20 @@ void mainLoop(Global::Parameters& params, Global::Tables& tabs, GL& glProperties
             frame = 0;
         }
 
-        run(params, tabs, glProperties);
+        runSimulation(params, tabs, props);
 
         std::ostringstream ss;
         ss << "[";
         ss.precision(1);
         ss << std::fixed << fps;
-        ss << " fps] " << windowTitle;
+        ss << " fps] " << props.windowTitle;
 
-        glfwSetWindowTitle(window, ss.str().c_str());
+        glfwSetWindowTitle(props.window, ss.str().c_str());
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         if (params.VISUALIZE) {
-            glUseProgram(glProperties.program);
-            glBindVertexArray(glProperties.fishVAO);
+            glUseProgram(props.program);
+            glBindVertexArray(props.fishVAO);
             glPointSize(3.0f);
             glDrawElements(GL_POINTS, params.FISH_NUM, GL_UNSIGNED_INT, 0);
             
@@ -189,7 +187,7 @@ void mainLoop(Global::Parameters& params, Global::Tables& tabs, GL& glProperties
             glBindVertexArray(0);
             glPointSize(1.0f);
             
-            glfwSwapBuffers(window);
+            glfwSwapBuffers(props.window);
         }
     }
 }
@@ -202,6 +200,10 @@ double lastY;
 
 void errorCallback(int error, const char* description) {
     fprintf(stderr, "error %d: %s\n", error, description);
+}
+
+void frameSizeCallback(GLFWwindow* window, int width, int height) {
+    glViewport(0, 0, width, height);
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
