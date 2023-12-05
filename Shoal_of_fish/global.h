@@ -4,18 +4,6 @@
 #include <cmath>
 #include <ctime> 
 
-#include <thrust/random.h>
-#include <thrust/sort.h>
-#include <thrust/gather.h>
-#include <thrust/transform.h>
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-#include <thrust/execution_policy.h>
-
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include <device_launch_parameters.h>
-
 #include <glm/glm.hpp>
 
 typedef unsigned int uint;
@@ -50,10 +38,9 @@ struct Parameters {
     } BOUNDS;
 
     // ZMIENIALNE PRZY INICJALIZACJI
-    bool VISUALIZE = true;
-    bool WRAP = true;
-    int SHOAL_NUM = 5;
+    bool WRAP = false;
     int FISH_NUM = 500;
+    int SHOAL_NUM = 3;
     int CELL_N = 50;
 
     // USTAWIANE AUTOMATYCZNIE
@@ -70,12 +57,12 @@ struct Parameters {
     float DT = 0.1f;
     float R = 0.01f; // from 0 up to CELL_LEN
     float COS_PHI = 0.5f; // from -1 to 1
-    float W_SEP = 0.05f; // from 0 to 0.1
-    float W_ALI = 5.0f; // from 0 to 10
-    float W_COH = 5.0f; // from 0 to 10
+    float W_SEP = 0.01f;
+    float W_ALI = 1.0f;
+    float W_COH = 1.0f;
 
     struct Blackhole {
-        const float VEL = 0.005f;
+        const float VEL = 0.01f;
         float X = 0.5f;
         float Y = 0.5f;
         bool PULL = false;
@@ -90,4 +77,8 @@ namespace GPU {
 }
 
 namespace CPU {
+    void initSimulation(const Parameters& params, Tables& tabs);
+    void stepSimulation(const Parameters& params, Tables& tabs);
+    void copyToVBO(const Parameters& params, Tables& tabs, float* d_vboTriangles, uint* d_vboShoals);
+    void endSimulation(Tables& tabs);
 }

@@ -8,12 +8,49 @@ int main(int argc, char* argv[]) {
     Parameters params;
     Tables tabs;
     GL props;
-    if (init(argc, argv, params, tabs, props)) {
+    if (!readArgs(argc, argv, params)) { return 1; }
+    if (init(params, tabs, props)) {
         mainLoop(params, tabs, props);
         GPU::endSimulation(tabs);
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
         glfwTerminate();
         return 0;
     } else { return 1; }
+}
+
+bool readArgs(int argc, char* argv[], Parameters& params) {
+    bool flag = true;
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+
+        if (arg == "--wrap") {
+            params.WRAP = true;
+        } else if (arg == "--fish_num" && i + 1 < argc) {
+            try {
+                params.FISH_NUM = std::stoi(argv[++i]);
+            } catch (const std::invalid_argument& e) {
+                flag = false;
+                std::cerr << "The argument {" << argv[i] << "} is invalid." << std::endl << e.what();
+            }
+        } else if (arg == "--shoal_num" && i + 1 < argc) {
+            try {
+                params.SHOAL_NUM = std::stoi(argv[++i]);
+            } catch (const std::invalid_argument& e) {
+                flag = false;
+                std::cerr << "The argument {" << argv[i] << "} is invalid." << std::endl << e.what();
+            }
+        } else if (arg == "--cell_n" && i + 1 < argc) {
+            try {
+                params.setCELL_N(std::stoi(argv[++i]));
+            } catch (const std::invalid_argument& e) {
+                flag = false;
+                std::cerr << "The argument {" << argv[i] << "} is invalid." << std::endl << e.what();
+            }
+        }
+    }
+    return flag;
 }
 
 /******************
@@ -41,7 +78,7 @@ std::optional<std::string> getTitle() {
     return ss.str();
 }
 
-bool init(int argc, char* argv[], Parameters& params, Tables& tabs, GL& props) {
+bool init(Parameters& params, Tables& tabs, GL& props) {
     
     // TODO : reading from console
     std::optional<std::string> title = getTitle();
@@ -79,6 +116,13 @@ bool init(int argc, char* argv[], Parameters& params, Tables& tabs, GL& props) {
 
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) { return false; }
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    ImGui_ImplGlfw_InitForOpenGL(props.window, true);
+    ImGui_ImplOpenGL3_Init();
 
     initVAO(params.FISH_NUM, props);
 
@@ -134,6 +178,17 @@ void initShaders(GL& props) {
     glUseProgram(props.program);
 }
 
+void renderUI(Parameters& params) {
+    ImGui::Begin("Simulation Control Window");
+    ImGui::SliderFloat("Time delta", &params.DT, 0.0f, 1.0f);
+    ImGui::SliderFloat("View range", &params.R, 0.0f, params.CELL_LEN);
+    ImGui::SliderFloat("Field of view (cosine)", &params.COS_PHI, -1.0f, 1.0f);
+    ImGui::SliderFloat("Separation weight", &params.W_SEP, 0.0f, 0.01f);
+    ImGui::SliderFloat("Alignment weight", &params.W_ALI, 0.0f, 10.0f);
+    ImGui::SliderFloat("Coherence weight", &params.W_COH, 0.0f, 10.0f);
+    ImGui::End();
+}
+
 /*************
 * Main Loop *
 *************/
@@ -145,7 +200,7 @@ void runStep(Parameters& params, Tables& tabs, GL& props) {
     cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboShoals), props.fishVBO_sho);
 
     GPU::stepSimulation(params, tabs);
-    if (params.VISUALIZE) {
+    if (props.VISUALIZE) {
         GPU::copyToVBO(params, tabs, d_vboTriangles, d_vboShoals);
     }
     cudaGLUnmapBufferObject(props.fishVBO_tri);
@@ -180,7 +235,16 @@ void mainLoop(Parameters& params, Tables& tabs, GL& props) {
         glfwSetWindowTitle(props.window, ss.str().c_str());
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        if (params.VISUALIZE) {
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        renderUI(params);
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        if (props.VISUALIZE) {
             glUseProgram(props.program);
             glBindVertexArray(props.fishVAO);
             glPointSize(2.0f);
@@ -214,7 +278,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     Parameters::Blackhole* bh = static_cast<Parameters::Blackhole*>(glfwGetWindowUserPointer(window));
-    if (action == GLFW_PRESS) {
+    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_RIGHT) {
         bh->PULL = true;
     } else if (action == GLFW_RELEASE) {
         bh->PULL = false;

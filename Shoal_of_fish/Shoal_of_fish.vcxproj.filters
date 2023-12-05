@@ -1,46 +1,144 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Headers">
-      <UniqueIdentifier>{ab336f02-da57-4434-a47e-b4fd2d6520e0}</UniqueIdentifier>
+    <Filter Include="ImGui">
+      <UniqueIdentifier>{2b384f1f-9777-4d9f-8d28-3690585ae47c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Sources">
+    <Filter Include="ImGui\Headers">
+      <UniqueIdentifier>{5b581ba4-c18c-41cd-83f2-49e44af258c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ImGui\Sources">
+      <UniqueIdentifier>{9d1bbd45-1795-42dc-9cfc-e8af694361b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GLSLUtility">
+      <UniqueIdentifier>{8ad900ec-2807-44dc-bd4c-28a4b4cf32f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ShoalOfFish">
+      <UniqueIdentifier>{2923d5f6-27a9-438c-ae23-abb01509bafe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ShoalOfFish\Shaders">
+      <UniqueIdentifier>{c9de29ad-9c44-4f1e-ba93-836650fc0674}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ShoalOfFish\Sources">
       <UniqueIdentifier>{2b409ca6-30fe-4b10-9b8f-6b52717abeb0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders">
-      <UniqueIdentifier>{c9de29ad-9c44-4f1e-ba93-836650fc0674}</UniqueIdentifier>
+    <Filter Include="ShoalOfFish\Headers">
+      <UniqueIdentifier>{ab336f02-da57-4434-a47e-b4fd2d6520e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GLSLUtility\Headers">
+      <UniqueIdentifier>{73bd6788-c231-4cdb-aba3-93679e402370}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GLSLUtility\Sources">
+      <UniqueIdentifier>{f7bda1f4-23a7-40b0-968c-87c9919fe05d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ImGui\Debugger">
+      <UniqueIdentifier>{7f8c9b12-63eb-4cde-811c-4dce1c8c3212}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ImGui\Backends">
+      <UniqueIdentifier>{c9e43d31-2abc-4b65-a6d2-249b4188f111}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ImGui\Backends\Headers">
+      <UniqueIdentifier>{6bbf46aa-e8e1-4668-92c4-46ad88f51530}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ImGui\Backends\Sources">
+      <UniqueIdentifier>{86362471-c87f-407e-9caa-f1c2f18ed84d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="glslUtility.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
-      <Filter>Sources</Filter>
+      <Filter>ShoalOfFish\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="host.cpp">
+      <Filter>ShoalOfFish\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui.cpp">
+      <Filter>ImGui\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_demo.cpp">
+      <Filter>ImGui\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_draw.cpp">
+      <Filter>ImGui\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_tables.cpp">
+      <Filter>ImGui\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_widgets.cpp">
+      <Filter>ImGui\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="glslUtility.cpp">
+      <Filter>GLSLUtility\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\misc\cpp\imgui_stdlib.cpp">
+      <Filter>ImGui\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\backends\imgui_impl_glfw.cpp">
+      <Filter>ImGui\Backends\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\backends\imgui_impl_opengl3.cpp">
+      <Filter>ImGui\Backends\Sources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="kernel.cu">
-      <Filter>Sources</Filter>
+      <Filter>ShoalOfFish\Sources</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="glslUtility.hpp">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="kernel.h">
-      <Filter>Headers</Filter>
+    <ClInclude Include="global.h">
+      <Filter>ShoalOfFish\Headers</Filter>
     </ClInclude>
     <ClInclude Include="main.h">
-      <Filter>Headers</Filter>
+      <Filter>ShoalOfFish\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imconfig.h">
+      <Filter>ImGui\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imgui.h">
+      <Filter>ImGui\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imgui_internal.h">
+      <Filter>ImGui\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imstb_rectpack.h">
+      <Filter>ImGui\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imstb_textedit.h">
+      <Filter>ImGui\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imstb_truetype.h">
+      <Filter>ImGui\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="glslUtility.hpp">
+      <Filter>GLSLUtility\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\misc\cpp\imgui_stdlib.h">
+      <Filter>ImGui\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\backends\imgui_impl_glfw.h">
+      <Filter>ImGui\Backends\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\backends\imgui_impl_opengl3.h">
+      <Filter>ImGui\Backends\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\backends\imgui_impl_opengl3_loader.h">
+      <Filter>ImGui\Backends\Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\frag.glsl">
-      <Filter>Shaders</Filter>
+      <Filter>ShoalOfFish\Shaders</Filter>
     </None>
     <None Include="shaders\vert.glsl">
-      <Filter>Shaders</Filter>
+      <Filter>ShoalOfFish\Shaders</Filter>
     </None>
+    <None Include="imgui\misc\debuggers\imgui.natstepfilter">
+      <Filter>ImGui\Debugger</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="imgui\misc\debuggers\imgui.natvis">
+      <Filter>ImGui\Debugger</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>

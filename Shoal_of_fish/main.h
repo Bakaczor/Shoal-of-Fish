@@ -16,6 +16,10 @@
 #include "global.h"
 #include "glslUtility.hpp"
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 struct GL {
 	// OpenGL
 	GLuint triLocation = 0;
@@ -32,21 +36,27 @@ struct GL {
 	const int HEIGHT = 720;
 	GLFWwindow* window = nullptr;
 	std::string windowTitle;
+
+	// Other
+	bool VISUALIZE = true;
+	bool CPU = false;
 };
 
 
 /********
 * Main *
 ********/
-int main(int argc, char* argv[]); 
+int main(int argc, char* argv[]);
+bool readArgs(int argc, char* argv[], Parameters& params);
 
 /******************
 * Initialization *
 ******************/
 std::optional<std::string> getTitle();
-bool init(int argc, char* argv[], Parameters& params, Tables& tabs, GL& props);
+bool init(Parameters& params, Tables& tabs, GL& props);
 void initVAO(const int& N, GL& props);
 void initShaders(GL& props);
+void renderUI(Parameters& params);
 
 /*************
 * Main Loop *
