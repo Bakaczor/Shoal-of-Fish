@@ -40,10 +40,16 @@ const dim3 threadsPerBlock(blockSize);
 * initSimulation *
 ******************/
 
-__host__ __device__ glm::vec2 d_generateRandomVec2(const int& rand, const int& index, const float& a, const float& b) {
+__device__ glm::vec2 d_generateRandomVec2(const int& rand, const int& index, const float& a, const float& b) {
     thrust::default_random_engine rng(index * rand);
     thrust::uniform_real_distribution<float> U(a, b);
     return glm::vec2(U(rng), U(rng));
+}
+
+__device__ uint d_generateRandomUint(const int& rand, const int& index, const float& scale) {
+    thrust::default_random_engine rng(index * rand);
+    thrust::uniform_real_distribution<float> U(0.0f, scale);
+    return static_cast<uint>(U(rng));
 }
 
 __global__ void k_generateRandomFloatArray(int rand, int N, float a, float b, glm::vec2* array) {
@@ -54,16 +60,10 @@ __global__ void k_generateRandomFloatArray(int rand, int N, float a, float b, gl
     array[index].y = random.y;
 }
 
-__host__ __device__ uint d_generateRandomInt(const int& rand, const int& index, const float& scale) {
-    thrust::default_random_engine rng(index * rand);
-    thrust::uniform_real_distribution<float> U(0.0f, scale);
-    return static_cast<uint>(U(rng));
-}
-
-__global__ void k_generateRandomIntArray(int rand, int N, float scale, uint* array) {
+__global__ void k_generateRandomUintArray(int rand, int N, float scale, uint* array) {
     const int index = (blockIdx.x * blockDim.x) + threadIdx.x;
     if (index >= N) return;
-    array[index] = d_generateRandomInt(rand, index, scale);
+    array[index] = d_generateRandomUint(rand, index, scale);
 }
 
 void GPU::initSimulation(const Parameters& params, Tables& tabs) {
@@ -77,10 +77,10 @@ void GPU::initSimulation(const Parameters& params, Tables& tabs) {
     cudaMalloc(reinterpret_cast<void**>(&tabs.d_cellId), N * sizeof(uint));
     checkCUDAError("cudaMalloc d_cellId failed!", __LINE__);
 
-    cudaMalloc(reinterpret_cast<void**>(&tabs.d_cellStart), M * sizeof(uint));
+    cudaMalloc(reinterpret_cast<void**>(&tabs.d_cellStart), M * sizeof(int));
     checkCUDAError("cudaMalloc d_cellStart failed!", __LINE__);
 
-    cudaMalloc(reinterpret_cast<void**>(&tabs.d_cellEnd), M * sizeof(uint));
+    cudaMalloc(reinterpret_cast<void**>(&tabs.d_cellEnd), M * sizeof(int));
     checkCUDAError("cudaMalloc d_cellEnd failed!", __LINE__);
 
     cudaMalloc(reinterpret_cast<void**>(&tabs.d_pos), N * sizeof(glm::vec2));
@@ -95,10 +95,10 @@ void GPU::initSimulation(const Parameters& params, Tables& tabs) {
     cudaMalloc(reinterpret_cast<void**>(&tabs.d_vel_g), N * sizeof(glm::vec2));
     checkCUDAError("cudaMalloc d_vel_g failed!", __LINE__);
 
-    cudaMalloc(reinterpret_cast<void**>(&tabs.d_shoalId), N * sizeof(glm::vec2));
+    cudaMalloc(reinterpret_cast<void**>(&tabs.d_shoalId), N * sizeof(uint));
     checkCUDAError("cudaMalloc d_shoalId failed!", __LINE__);
 
-    cudaMalloc(reinterpret_cast<void**>(&tabs.d_shoalId_g), N * sizeof(glm::vec2));
+    cudaMalloc(reinterpret_cast<void**>(&tabs.d_shoalId_g), N * sizeof(uint));
     checkCUDAError("cudaMalloc d_shoalId_g failed!", __LINE__);
 
     cudaMalloc(reinterpret_cast<void**>(&tabs.d_newVel), N * sizeof(glm::vec2));
@@ -110,7 +110,7 @@ void GPU::initSimulation(const Parameters& params, Tables& tabs) {
     k_generateRandomFloatArray <<< blocksPerGrid, threadsPerBlock >>> (rand(), N, -params.MAX_VEL, params.MAX_VEL, tabs.d_vel);
     checkCUDAError("k_generateRandomFloatArray failed!", __LINE__);
 
-    k_generateRandomIntArray <<<blocksPerGrid, threadsPerBlock >>> (rand(), N, params.SHOAL_NUM, tabs.d_shoalId);
+    k_generateRandomUintArray <<<blocksPerGrid, threadsPerBlock >>> (rand(), N, params.SHOAL_NUM, tabs.d_shoalId);
     checkCUDAError("k_generateRandomUintArray failed!", __LINE__);
 
     cudaDeviceSynchronize();
@@ -120,7 +120,7 @@ void GPU::initSimulation(const Parameters& params, Tables& tabs) {
 * stepSimulation *
 ******************/
 
-__host__ __device__ thrust::pair<int, int> d_getCellIndices(const float& x, const float& y, const float& L, const int& N) {
+__device__ thrust::pair<int, int> d_getCellIndices(const float& x, const float& y, const float& L, const int& N) {
     int i = static_cast<int>(x * L);
     int j = static_cast<int>(y * L);
     // skrajny przypadek, w którym x lub y le¿¹ na górnej granicy
@@ -133,8 +133,34 @@ __host__ __device__ thrust::pair<int, int> d_getCellIndices(const float& x, cons
     return thrust::make_pair(i, j);
 }
 
-__host__ __device__ int d_getCellId(const int& i, const int& j, const int& N) {
+__device__ int d_getCellId(const int& i, const int& j, const int& N) {
     return i * N + j;
+}
+
+__device__ glm::vec2 d_reflectVelocity(const glm::vec2& vel, const float& val, const float& min, const float& max, const bool& side) {
+    if (val < min || val > max) {
+        if (side) {
+            return glm::vec2(-vel.x, vel.y);
+        } else {
+            return glm::vec2(vel.x, -vel.y);
+        }
+    }
+    return vel;
+}
+
+__device__ float d_wrapAround(float val, const float& min, const float& max) {
+    if (val < min) {
+        val = max - 1.0E-16f;
+    } else if (val > max) {
+        val = min + 1.0E-16f;
+    }
+    return val;
+}
+
+__device__ glm::vec2 d_wrapPosition(glm::vec2 position, const Parameters::Bounds& bounds) {
+    position.x = d_wrapAround(position.x, bounds.MIN_X, bounds.MAX_X);
+    position.y = d_wrapAround(position.y, bounds.MIN_Y, bounds.MAX_Y);
+    return position;
 }
 
 __global__ void k_AssignIds(int N, int cellLineNumber, float inverseCellWidth, glm::vec2* positions, uint* fishIndices, uint* cellIndices) {
@@ -181,17 +207,6 @@ __global__ void k_AssignCellStartEnd(int N, uint* cellIndices, int* cellStarts, 
     if (cellIndices[index + 1] != id) {
         cellEnds[id] = index;
     }
-}
-
-__host__ __device__ glm::vec2 d_reflectVelocity(const glm::vec2& vel, const float& val, const float& min, const float& max, const bool& side) {
-    if (val < min || val > max) {
-        if (side) {
-            return glm::vec2(-vel.x, vel.y);
-        } else {
-            return glm::vec2(vel.x, -vel.y);
-        }
-    }
-    return vel;
 }
 
 __global__ void k_updateVelocity(Parameters params, int* cellStarts, int* cellEnds,
@@ -290,22 +305,6 @@ __global__ void k_updateVelocity(Parameters params, int* cellStarts, int* cellEn
     }
     newVelocities[index] = newVelocity;
 }
-
-__host__ __device__ float d_wrapAround(float val, const float& min, const float& max) {
-    if (val < min) {
-        val = max - 1.0E-16f;
-    } else if (val > max) {
-        val = min + 1.0E-16f;
-    }
-    return val;
-}
-
-__host__ __device__ glm::vec2 d_wrapPosition(glm::vec2 position, const Parameters::Bounds& bounds) {
-    position.x = d_wrapAround(position.x, bounds.MIN_X, bounds.MAX_X);
-    position.y = d_wrapAround(position.y, bounds.MIN_Y, bounds.MAX_Y);
-    return position;
-}
-
 
 void GPU::stepSimulation(const Parameters& params, Tables& tabs) {
     const int& N = params.FISH_NUM;

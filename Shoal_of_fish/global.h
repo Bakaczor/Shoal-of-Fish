@@ -1,9 +1,5 @@
 #pragma once
 
-#include <cstdio>
-#include <cmath>
-#include <ctime> 
-
 #include <glm/glm.hpp>
 
 typedef unsigned int uint;
@@ -25,7 +21,7 @@ struct Tables {
 };
 
 struct Parameters {
-    // NIEZMIENIALNE
+    // CONSTANT
     const float MIN_VEL = 0.0005f;
     const float MAX_VEL = 0.005f;
 
@@ -37,13 +33,13 @@ struct Parameters {
         const float SCALE = 1.0f;
     } BOUNDS;
 
-    // ZMIENIALNE PRZY INICJALIZACJI
+    // SET DURING INITALIZATION
     bool WRAP = false;
     int FISH_NUM = 500;
     int SHOAL_NUM = 3;
     int CELL_N = 50;
 
-    // USTAWIANE AUTOMATYCZNIE
+    // SET AUTOMATICALLY
     float CELL_LEN = 0.02f;
     float CELL_LEN_INV = 50.0f;
 
@@ -53,11 +49,11 @@ struct Parameters {
         CELL_LEN_INV = 1 / CELL_LEN;
     }
 
-    // ZMIENIALNE W TRAKCIE
-    float DT = 0.1f;
-    float R = 0.01f; // from 0 up to CELL_LEN
-    float COS_PHI = 0.5f; // from -1 to 1
-    float W_SEP = 0.01f;
+    // MODIFIABLE DURING SIMULATION
+    float DT = 0.2f;
+    float R = 0.01f;
+    float COS_PHI = 0.3f;
+    float W_SEP = 0.005f;
     float W_ALI = 1.0f;
     float W_COH = 1.0f;
 

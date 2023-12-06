@@ -79,8 +79,6 @@ std::optional<std::string> getTitle() {
 }
 
 bool init(Parameters& params, Tables& tabs, GL& props) {
-    
-    // TODO : reading from console
     std::optional<std::string> title = getTitle();
     if (title.has_value()) {
         props.windowTitle = title.value();
@@ -200,7 +198,7 @@ void runStep(Parameters& params, Tables& tabs, GL& props) {
     cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboShoals), props.fishVBO_sho);
 
     GPU::stepSimulation(params, tabs);
-    if (props.VISUALIZE) {
+    if (VISUALIZE) {
         GPU::copyToVBO(params, tabs, d_vboTriangles, d_vboShoals);
     }
     cudaGLUnmapBufferObject(props.fishVBO_tri);
@@ -208,29 +206,16 @@ void runStep(Parameters& params, Tables& tabs, GL& props) {
 }
 
 void mainLoop(Parameters& params, Tables& tabs, GL& props) {
-    double fps = 0;
-    int frame = 0;
-    double timebase = 0;
-
     while (!glfwWindowShouldClose(props.window)) {
         glfwPollEvents();
-
-        frame++;
-        double time = glfwGetTime();
-        double elapsed = time - timebase;
-        if (elapsed > 1.0) {
-            fps = frame / elapsed;
-            timebase = time;
-            frame = 0;
-        }
 
         runStep(params, tabs, props);
 
         std::ostringstream ss;
         ss << "[";
         ss.precision(1);
-        ss << std::fixed << fps;
-        ss << " fps] " << props.windowTitle;
+        ss << std::fixed << ImGui::GetIO().Framerate;
+        ss << " FPS] " << props.windowTitle;
 
         glfwSetWindowTitle(props.window, ss.str().c_str());
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -244,7 +229,7 @@ void mainLoop(Parameters& params, Tables& tabs, GL& props) {
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        if (props.VISUALIZE) {
+        if (VISUALIZE) {
             glUseProgram(props.program);
             glBindVertexArray(props.fishVAO);
             glPointSize(2.0f);
@@ -289,6 +274,6 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
     Parameters::Blackhole* bh = static_cast<Parameters::Blackhole*>(glfwGetWindowUserPointer(window));
     int width, height;
     glfwGetWindowSize(window, &width, &height);
-    bh->X = xpos / width;
-    bh->Y = (height - ypos) / height;
+    bh->X = static_cast<float>(xpos / width);
+    bh->Y = static_cast<float>((height - ypos) / height);
 }

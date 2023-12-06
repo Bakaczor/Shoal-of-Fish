@@ -4,7 +4,6 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <fstream>
 #include <optional>
 
 #define GLEW_STATIC
@@ -14,11 +13,14 @@
 #include <cuda_gl_interop.h>
 
 #include "global.h"
-#include "glslUtility.hpp"
+#include "glslUtility/glslUtility.hpp"
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+
+constexpr bool VISUALIZE = true;
+constexpr bool HOST = false;
 
 struct GL {
 	// OpenGL
@@ -36,10 +38,6 @@ struct GL {
 	const int HEIGHT = 720;
 	GLFWwindow* window = nullptr;
 	std::string windowTitle;
-
-	// Other
-	bool VISUALIZE = true;
-	bool CPU = false;
 };
 
 
