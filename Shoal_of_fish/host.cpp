@@ -362,9 +362,9 @@ void copyShoalToVBO(int N, uint* shoal, uint* vbo) {
     }
 }
 
-void CPU::copyToVBO(const Parameters& params, Tables& tabs, float* d_vboTriangles, uint* d_vboShoals) {
-    copyTriangleToVBO(params.FISH_NUM, tabs.d_pos, tabs.d_vel, d_vboTriangles);
-    copyShoalToVBO(params.FISH_NUM, tabs.d_shoalId, d_vboShoals);
+void CPU::copyToVBO(const Parameters& params, Tables& tabs, float* vboTriangles, uint* vboShoals) {
+    copyTriangleToVBO(params.FISH_NUM, tabs.d_pos, tabs.d_vel, vboTriangles);
+    copyShoalToVBO(params.FISH_NUM, tabs.d_shoalId, vboShoals);
 }
 
  /******************

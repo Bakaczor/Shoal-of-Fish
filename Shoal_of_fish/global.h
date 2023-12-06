@@ -35,8 +35,8 @@ struct Parameters {
 
     // SET DURING INITALIZATION
     bool WRAP = false;
-    int FISH_NUM = 500;
-    int SHOAL_NUM = 3;
+    int FISH_NUM = 100;
+    int SHOAL_NUM = 2;
     int CELL_N = 50;
 
     // SET AUTOMATICALLY
@@ -75,6 +75,6 @@ namespace GPU {
 namespace CPU {
     void initSimulation(const Parameters& params, Tables& tabs);
     void stepSimulation(const Parameters& params, Tables& tabs);
-    void copyToVBO(const Parameters& params, Tables& tabs, float* d_vboTriangles, uint* d_vboShoals);
+    void copyToVBO(const Parameters& params, Tables& tabs, float* vboTriangles, uint* vboShoals);
     void endSimulation(Tables& tabs);
 }

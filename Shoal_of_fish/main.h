@@ -20,7 +20,7 @@
 #include "imgui_impl_opengl3.h"
 
 constexpr bool VISUALIZE = true;
-constexpr bool HOST = false;
+constexpr bool HOST = true;
 
 struct GL {
 	// OpenGL
@@ -38,6 +38,10 @@ struct GL {
 	const int HEIGHT = 720;
 	GLFWwindow* window = nullptr;
 	std::string windowTitle;
+
+	// VBO BINDED
+	std::unique_ptr<GLfloat[]> bodies;
+	std::unique_ptr<GLuint[]> shoals;
 };
 
 

@@ -62,23 +62,27 @@ bool readArgs(int argc, char* argv[], Parameters& params) {
 ******************/
 
 std::optional<std::string> getTitle() {
-    cudaDeviceProp deviceProp;
-    int gpuDevice = 0;
-    int device_count = 0;
-    cudaGetDeviceCount(&device_count);
-    if (gpuDevice > device_count) {
-        std::cout
-            << "Error: GPU device number is greater than the number of devices!"
-            << " Perhaps a CUDA-capable GPU is not installed?"
-            << std::endl;
-        return {};
-    }
-    cudaGetDeviceProperties(&deviceProp, gpuDevice);
-    int major = deviceProp.major;
-    int minor = deviceProp.minor;
-
     std::ostringstream ss;
-    ss << "Shoal of Fish" << " [" << major << "." << minor << " " << deviceProp.name << "]";
+    ss << "Shoal of Fish";
+
+    if (!HOST) {
+        cudaDeviceProp deviceProp;
+        int gpuDevice = 0;
+        int device_count = 0;
+        cudaGetDeviceCount(&device_count);
+        if (gpuDevice > device_count) {
+            std::cout
+                << "Error: GPU device number is greater than the number of devices!"
+                << " Perhaps a CUDA-capable GPU is not installed?"
+                << std::endl;
+            return {};
+        }
+        cudaGetDeviceProperties(&deviceProp, gpuDevice);
+        int major = deviceProp.major;
+        int minor = deviceProp.minor;
+
+        ss << " [" << major << "." << minor << " " << deviceProp.name << "]";
+    }
     return ss.str();
 }
 
@@ -128,12 +132,13 @@ bool init(Parameters& params, Tables& tabs, GL& props) {
 
     initVAO(params.FISH_NUM, props);
 
-    cudaGLSetGLDevice(0);
-    cudaGLRegisterBufferObject(props.fishVBO_tri);
-    cudaGLRegisterBufferObject(props.fishVBO_sho);
     if (HOST) {
         CPU::initSimulation(params, tabs);
     } else {
+        cudaGLSetGLDevice(0);
+        cudaGLRegisterBufferObject(props.fishVBO_tri);
+        cudaGLRegisterBufferObject(props.fishVBO_sho);
+
         GPU::initSimulation(params, tabs);
     }
 
@@ -143,36 +148,35 @@ bool init(Parameters& params, Tables& tabs, GL& props) {
 }
 
 void initVAO(const int& N, GL& props) {
-    std::unique_ptr<GLfloat[]> bodies(new GLfloat[2 * 3 * N]);
-    std::unique_ptr<GLuint[]> shoals(new GLuint[3 * N]);
+    props.bodies.reset(new GLfloat[2 * 3 * N]);
+    props.shoals.reset(new GLuint[3 * N]);
 
     for (int i = 0; i < N; i++) {
         const int j = 2 * 3 * i;
-        bodies[j + 0] = 0.0f;
-        bodies[j + 1] = 0.0f;
-        bodies[j + 2] = 0.0f;
-        bodies[j + 3] = 0.0f;
-        bodies[j + 4] = 0.0f;
-        bodies[j + 5] = 0.0f;
+        props.bodies[j + 0] = 0.0f;
+        props.bodies[j + 1] = 0.0f;
+        props.bodies[j + 2] = 0.0f;
+        props.bodies[j + 3] = 0.0f;
+        props.bodies[j + 4] = 0.0f;
+        props.bodies[j + 5] = 0.0f;
         const int k = 3 * i;
-        shoals[k + 0] = 0U;
-        shoals[k + 1] = 0U;
-        shoals[k + 2] = 0U;
+        props.shoals[k + 0] = 0U;
+        props.shoals[k + 1] = 0U;
+        props.shoals[k + 2] = 0U;
     }
 
     glGenVertexArrays(1, &props.fishVAO);
     glGenBuffers(1, &props.fishVBO_tri);
     glGenBuffers(1, &props.fishVBO_sho);
-    glGenBuffers(1, &props.fishEBO);
     glBindVertexArray(props.fishVAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, props.fishVBO_tri);
-    glBufferData(GL_ARRAY_BUFFER, 2 * 3 * N * sizeof(GLfloat), bodies.get(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 2 * 3 * N * sizeof(GLfloat), props.bodies.get(), GL_DYNAMIC_DRAW);
     glVertexAttribPointer(props.triLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(props.triLocation);
 
     glBindBuffer(GL_ARRAY_BUFFER, props.fishVBO_sho);
-    glBufferData(GL_ARRAY_BUFFER, 3 * N * sizeof(GLuint), shoals.get(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 3 * N * sizeof(GLuint), props.shoals.get(), GL_DYNAMIC_DRAW);
     glVertexAttribPointer(props.shoalLocation, 1, GL_UNSIGNED_INT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(props.shoalLocation);
 
@@ -200,25 +204,26 @@ void renderUI(Parameters& params) {
 *************/
 
 void runStep(Parameters& params, Tables& tabs, GL& props) {
-    float* d_vboTriangles = nullptr;
-    uint* d_vboShoals = nullptr;
-    cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboTriangles), props.fishVBO_tri);
-    cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboShoals), props.fishVBO_sho);
-
     if (HOST) {
         CPU::stepSimulation(params, tabs);
         if (VISUALIZE) {
-            CPU::copyToVBO(params, tabs, d_vboTriangles, d_vboShoals);
+            CPU::copyToVBO(params, tabs, props.bodies.get(), props.shoals.get());
         }
-    } else {
+    }
+    else {
+        float* d_vboTriangles = nullptr;
+        uint* d_vboShoals = nullptr;
+        cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboTriangles), props.fishVBO_tri);
+        cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboShoals), props.fishVBO_sho);
+
         GPU::stepSimulation(params, tabs);
         if (VISUALIZE) {
             GPU::copyToVBO(params, tabs, d_vboTriangles, d_vboShoals);
         }
-    }
 
-    cudaGLUnmapBufferObject(props.fishVBO_tri);
-    cudaGLUnmapBufferObject(props.fishVBO_sho);
+        cudaGLUnmapBufferObject(props.fishVBO_tri);
+        cudaGLUnmapBufferObject(props.fishVBO_sho);
+    }
 }
 
 void mainLoop(Parameters& params, Tables& tabs, GL& props) {
