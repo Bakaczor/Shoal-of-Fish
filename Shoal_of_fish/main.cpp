@@ -11,7 +11,11 @@ int main(int argc, char* argv[]) {
     if (!readArgs(argc, argv, params)) { return 1; }
     if (init(params, tabs, props)) {
         mainLoop(params, tabs, props);
-        GPU::endSimulation(tabs);
+        if (HOST) {
+            CPU::endSimulation(tabs);
+        } else {
+            GPU::endSimulation(tabs);
+        }
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
@@ -127,7 +131,11 @@ bool init(Parameters& params, Tables& tabs, GL& props) {
     cudaGLSetGLDevice(0);
     cudaGLRegisterBufferObject(props.fishVBO_tri);
     cudaGLRegisterBufferObject(props.fishVBO_sho);
-    GPU::initSimulation(params, tabs);
+    if (HOST) {
+        CPU::initSimulation(params, tabs);
+    } else {
+        GPU::initSimulation(params, tabs);
+    }
 
     initShaders(props);
     glEnable(GL_DEPTH_TEST);
@@ -197,10 +205,18 @@ void runStep(Parameters& params, Tables& tabs, GL& props) {
     cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboTriangles), props.fishVBO_tri);
     cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboShoals), props.fishVBO_sho);
 
-    GPU::stepSimulation(params, tabs);
-    if (VISUALIZE) {
-        GPU::copyToVBO(params, tabs, d_vboTriangles, d_vboShoals);
+    if (HOST) {
+        CPU::stepSimulation(params, tabs);
+        if (VISUALIZE) {
+            CPU::copyToVBO(params, tabs, d_vboTriangles, d_vboShoals);
+        }
+    } else {
+        GPU::stepSimulation(params, tabs);
+        if (VISUALIZE) {
+            GPU::copyToVBO(params, tabs, d_vboTriangles, d_vboShoals);
+        }
     }
+
     cudaGLUnmapBufferObject(props.fishVBO_tri);
     cudaGLUnmapBufferObject(props.fishVBO_sho);
 }
