@@ -9,6 +9,10 @@
 #include <thrust/host_vector.h>
 #include <thrust/execution_policy.h>
 
+// Analogical code to the one in kernel.cu
+// Performs calculations on CPU instead of GPU
+// For detailed commentary visit kernel.cu
+
 /******************
 * initSimulation *
 ******************/
@@ -96,12 +100,9 @@ void CPU::initSimulation(const Parameters& params, Tables& tabs) {
         fprintf(stderr, "Error: new d_newVel failed!: %d.\n", __LINE__);
     }
 
-    const float max_6 = params.BOUNDS.MAX_X / 6.0f;
     srand(time(0));
-
-    generateRandomFloatArray(rand(), N, max_6, 5 * max_6, tabs.d_pos);
+    generateRandomFloatArray(rand(), N, 1.0E-16f, params.BOUNDS.MAX_X - 1.0E-16f, tabs.d_pos);
     generateRandomFloatArray(rand(), N, -params.MAX_VEL, params.MAX_VEL, tabs.d_vel);
-
     generateRandomUintArray(rand(), N, params.SHOAL_NUM, tabs.d_shoalId);
 }
 
@@ -112,7 +113,7 @@ void CPU::initSimulation(const Parameters& params, Tables& tabs) {
 std::pair<int, int> getCellIndices(const float& x, const float& y, const float& L, const int& N) {
     int i = static_cast<int>(x * L);
     int j = static_cast<int>(y * L);
-    // skrajny przypadek, w którym x lub y le¿¹ na górnej granicy
+
     if (i >= N) {
         i = N - 1;
     }

@@ -4,6 +4,7 @@
 
 typedef unsigned int uint;
 
+// This structure holds all data used during computations.
 struct Tables {
     uint* d_fishId = nullptr;
     uint* d_cellId = nullptr;
@@ -20,8 +21,10 @@ struct Tables {
     glm::vec2* d_newVel = nullptr;
 };
 
+// This structure holds all parameters necessary for simulation.
 struct Parameters {
-    // CONSTANT
+    // === CONSTANT ===
+
     const float MIN_VEL = 0.0005f;
     const float MAX_VEL = 0.005f;
 
@@ -33,13 +36,15 @@ struct Parameters {
         const float SCALE = 1.0f;
     } BOUNDS;
 
-    // SET DURING INITALIZATION
+    // === SET DURING INITALIZATION ===
+
     bool WRAP = false;
-    int FISH_NUM = 100;
-    int SHOAL_NUM = 2;
+    int FISH_NUM = 500;
+    int SHOAL_NUM = 3;
     int CELL_N = 50;
 
-    // SET AUTOMATICALLY
+    // === SET AUTOMATICALLY ===
+
     float CELL_LEN = 0.02f;
     float CELL_LEN_INV = 50.0f;
 
@@ -49,13 +54,14 @@ struct Parameters {
         CELL_LEN_INV = 1 / CELL_LEN;
     }
 
-    // MODIFIABLE DURING SIMULATION
+    // === MODIFIABLE DURING SIMULATION ===
+
     float DT = 0.2f;
     float R = 0.01f;
-    float COS_PHI = 0.3f;
+    float COS_PHI = 0.0f;
     float W_SEP = 0.005f;
-    float W_ALI = 1.0f;
-    float W_COH = 1.0f;
+    float W_ALI = 2.0f;
+    float W_COH = 2.0f;
 
     struct Blackhole {
         const float VEL = 0.01f;
@@ -66,15 +72,29 @@ struct Parameters {
 };
 
 namespace GPU {
+    // Allocates memory and fills tables with randomized data
     void initSimulation(const Parameters& params, Tables& tabs);
+
+    // Performs calculations for one frame of the simulation
     void stepSimulation(const Parameters& params, Tables& tabs);
-    void copyToVBO(const Parameters& params, Tables& tabs, float* d_vboTriangles, uint* d_vboShoals);
+
+    // Creates triangles from positions and velocities, copies them and shoals to VBO binded buffers
+    void copyToVBO(const Parameters& params, Tables& tabs, float* vboTriangles, uint* vboShoals);
+
+    // Deallocates memory
     void endSimulation(Tables& tabs);
 }
 
 namespace CPU {
+    // Allocates memory and fills tables with randomized data
     void initSimulation(const Parameters& params, Tables& tabs);
+
+    // Performs calculations for one frame of the simulation
     void stepSimulation(const Parameters& params, Tables& tabs);
+
+    // Creates triangles from positions and velocities, copies them and shoals to VBO binded buffers
     void copyToVBO(const Parameters& params, Tables& tabs, float* vboTriangles, uint* vboShoals);
+
+    // Deallocates memory
     void endSimulation(Tables& tabs);
 }

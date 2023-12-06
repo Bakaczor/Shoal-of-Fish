@@ -8,7 +8,9 @@ int main(int argc, char* argv[]) {
     Parameters params;
     Tables tabs;
     GL props;
+
     if (!readArgs(argc, argv, params)) { return 1; }
+
     if (init(params, tabs, props)) {
         mainLoop(params, tabs, props);
         if (HOST) {
@@ -16,10 +18,13 @@ int main(int argc, char* argv[]) {
         } else {
             GPU::endSimulation(tabs);
         }
+
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
+
         glfwTerminate();
+
         return 0;
     } else { return 1; }
 }
@@ -188,6 +193,10 @@ void initShaders(GL& props) {
     glUseProgram(props.program);
 }
 
+/*************
+* Main Loop *
+*************/
+
 void renderUI(Parameters& params) {
     ImGui::Begin("Simulation Control Window");
     ImGui::SliderFloat("Time delta", &params.DT, 0.0f, 1.0f);
@@ -199,26 +208,33 @@ void renderUI(Parameters& params) {
     ImGui::End();
 }
 
-/*************
-* Main Loop *
-*************/
-
 void runStep(Parameters& params, Tables& tabs, GL& props) {
     if (HOST) {
         CPU::stepSimulation(params, tabs);
         if (VISUALIZE) {
             CPU::copyToVBO(params, tabs, props.bodies.get(), props.shoals.get());
         }
+
+        glBindBuffer(GL_ARRAY_BUFFER, props.fishVBO_tri);
+        void* vboTriangles = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+        memcpy(vboTriangles, props.bodies.get(), 2 * 3 * params.FISH_NUM * sizeof(GLfloat));
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+
+        glBindBuffer(GL_ARRAY_BUFFER, props.fishVBO_sho);
+        void* vboShoals = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+        memcpy(vboShoals, props.shoals.get(), 3 * params.FISH_NUM * sizeof(GLuint));
+        glUnmapBuffer(GL_ARRAY_BUFFER);
     }
     else {
-        float* d_vboTriangles = nullptr;
-        uint* d_vboShoals = nullptr;
-        cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboTriangles), props.fishVBO_tri);
-        cudaGLMapBufferObject(reinterpret_cast<void**>(&d_vboShoals), props.fishVBO_sho);
+        float* vboTriangles = nullptr;
+        uint* vboShoals = nullptr;
+
+        cudaGLMapBufferObject(reinterpret_cast<void**>(&vboTriangles), props.fishVBO_tri);
+        cudaGLMapBufferObject(reinterpret_cast<void**>(&vboShoals), props.fishVBO_sho);
 
         GPU::stepSimulation(params, tabs);
         if (VISUALIZE) {
-            GPU::copyToVBO(params, tabs, d_vboTriangles, d_vboShoals);
+            GPU::copyToVBO(params, tabs, vboTriangles, vboShoals);
         }
 
         cudaGLUnmapBufferObject(props.fishVBO_tri);
