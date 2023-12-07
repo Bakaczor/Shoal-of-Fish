@@ -44,8 +44,8 @@ void generateRandomUintArray(int rand, int N, float scale, uint* array) {
 }
 
 void CPU::initSimulation(const Parameters& params, Tables& tabs) {
-    const int N = params.FISH_NUM;
-    const int M = params.CELL_N * params.CELL_N;
+    const int& N = params.FISH_NUM;
+    const int& M = params.CELL_N * params.CELL_N;
 
     tabs.d_fishId = new uint[N];
     if (!tabs.d_fishId) {

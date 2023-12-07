@@ -78,7 +78,7 @@ Debug > Properties > Linker > General > Additional Library Directories
 ```
 and add there a path to `lib` directory.
 
-Then go to `Linker > Input > Additional Dependencies` add `opengl32.lib`, `glew32s.lib` and `glfw3.lib`.
+Then go to `Linker > Input > Additional Dependencies` and add there `opengl32.lib`, `glew32s.lib` and `glfw3.lib`.
 
 ### Dynamic libraries
 Go to directory with the executable (in Visual Studio `x64 > Debug`) and copy there `glew32.dll` and `shaders` directory (if it haven't been copied by itself).

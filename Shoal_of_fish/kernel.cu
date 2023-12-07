@@ -70,8 +70,8 @@ __global__ void k_generateRandomUintArray(int rand, int N, float scale, uint* ar
 }
 
 void GPU::initSimulation(const Parameters& params, Tables& tabs) {
-    const int N = params.FISH_NUM;
-    const int M = params.CELL_N * params.CELL_N;
+    const int& N = params.FISH_NUM;
+    const int& M = params.CELL_N * params.CELL_N;
     const dim3 blocksPerGrid((N + 1) / blockSize);
 
     // --- Memory allocation ---

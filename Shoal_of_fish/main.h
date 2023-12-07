@@ -5,6 +5,8 @@
 #include <string>
 #include <sstream>
 #include <optional>
+#include <chrono>
+#include <vector>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -18,6 +20,8 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+
+using hrc = std::chrono::high_resolution_clock;
 
 // Turn off if you want to only measure calculations
 constexpr bool VISUALIZE = true;
@@ -48,6 +52,10 @@ struct GL {
 
 	std::unique_ptr<GLfloat[]> bodies;
 	std::unique_ptr<GLuint[]> shoals;
+
+	// === Measurements ===
+	std::vector<long long> steps;
+	std::vector<long long> copying;
 };
 
 
@@ -60,6 +68,9 @@ int main(int argc, char* argv[]);
 
 // Read and set arguments from the command line
 bool readArgs(int argc, char* argv[], Parameters& params);
+
+// Calculates the average from vector
+double average(const std::vector<long long>& vec);
 
 /******************
 * Initialization *

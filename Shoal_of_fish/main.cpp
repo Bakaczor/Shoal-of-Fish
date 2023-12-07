@@ -19,6 +19,9 @@ int main(int argc, char* argv[]) {
             GPU::endSimulation(tabs);
         }
 
+        std::cout << "Calculating step took on average " << average(props.steps) << " microseconds." << std::endl;
+        std::cout << "Copying to VBO took on average " << average(props.copying) << " microseconds." << std::endl;
+
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
@@ -60,6 +63,19 @@ bool readArgs(int argc, char* argv[], Parameters& params) {
         }
     }
     return flag;
+}
+
+double average(const std::vector<long long>& vec) {
+    if (vec.empty()) {
+        return 0.0;
+    }
+
+    long long sum = 0;
+    for (const auto& element : vec) {
+        sum += element;
+    }
+
+    return static_cast<double>(sum) / vec.size();
 }
 
 /******************
@@ -137,6 +153,7 @@ bool init(Parameters& params, Tables& tabs, GL& props) {
 
     initVAO(params.FISH_NUM, props);
 
+    auto start = hrc::now();
     if (HOST) {
         CPU::initSimulation(params, tabs);
     } else {
@@ -146,6 +163,9 @@ bool init(Parameters& params, Tables& tabs, GL& props) {
 
         GPU::initSimulation(params, tabs);
     }
+    auto end = hrc::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "Initialization took " << duration.count() << " milliseconds." << std::endl;
 
     initShaders(props);
     glEnable(GL_DEPTH_TEST);
@@ -210,7 +230,13 @@ void renderUI(Parameters& params) {
 
 void runStep(Parameters& params, Tables& tabs, GL& props) {
     if (HOST) {
+        auto start = hrc::now();
         CPU::stepSimulation(params, tabs);
+        auto end = hrc::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        props.steps.push_back(duration.count());
+
+        start = hrc::now();
         if (VISUALIZE) {
             CPU::copyToVBO(params, tabs, props.bodies.get(), props.shoals.get());
         }
@@ -224,6 +250,10 @@ void runStep(Parameters& params, Tables& tabs, GL& props) {
         void* vboShoals = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
         memcpy(vboShoals, props.shoals.get(), 3 * params.FISH_NUM * sizeof(GLuint));
         glUnmapBuffer(GL_ARRAY_BUFFER);
+
+        end = hrc::now();
+        duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        props.copying.push_back(duration.count());
     }
     else {
         float* vboTriangles = nullptr;
@@ -232,9 +262,18 @@ void runStep(Parameters& params, Tables& tabs, GL& props) {
         cudaGLMapBufferObject(reinterpret_cast<void**>(&vboTriangles), props.fishVBO_tri);
         cudaGLMapBufferObject(reinterpret_cast<void**>(&vboShoals), props.fishVBO_sho);
 
+        auto start = hrc::now();
         GPU::stepSimulation(params, tabs);
+        auto end = hrc::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        props.steps.push_back(duration.count());
+
         if (VISUALIZE) {
+            start = hrc::now();
             GPU::copyToVBO(params, tabs, vboTriangles, vboShoals);
+            end = hrc::now();
+            duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+            props.copying.push_back(duration.count());
         }
 
         cudaGLUnmapBufferObject(props.fishVBO_tri);
