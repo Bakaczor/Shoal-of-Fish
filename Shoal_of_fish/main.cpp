@@ -222,7 +222,7 @@ void renderUI(Parameters& params) {
     ImGui::SliderFloat("Time delta", &params.DT, 0.0f, 1.0f);
     ImGui::SliderFloat("View range", &params.R, 0.0f, params.CELL_LEN);
     ImGui::SliderFloat("Field of view (cosine)", &params.COS_PHI, -1.0f, 1.0f);
-    ImGui::SliderFloat("Separation weight", &params.W_SEP, 0.0f, 0.01f);
+    ImGui::SliderFloat("Separation weight", &params.W_SEP, 0.0f, 0.025f);
     ImGui::SliderFloat("Alignment weight", &params.W_ALI, 0.0f, 10.0f);
     ImGui::SliderFloat("Coherence weight", &params.W_COH, 0.0f, 10.0f);
     ImGui::End();

@@ -12,7 +12,7 @@ The fish will wrap their position around, when crossing the border. If not set, 
 
 --fish_num <number>
 The number of fish to simulate.
-By default 500.
+By default 1000.
 
 --shoal_num <number>
 The number of the fish shoals.
@@ -20,7 +20,7 @@ By default 3.
 
 --cell_n <number>
 The number of the cells of the uniform grid in one row (and number of rows at the same time).
-By default 50.
+By default 20.
 ```
 
 ## Constants
@@ -83,6 +83,27 @@ Then go to `Linker > Input > Additional Dependencies` and add there `opengl32.li
 ### Dynamic libraries
 Go to directory with the executable (in Visual Studio `x64 > Debug`) and copy there `glew32.dll` and `shaders` directory (if it haven't been copied by itself).
 
+## Interesting settings
+While playing with model I observed interesting behaviour with following settings. Test them with one shoal or more for different experience.
+
+### First
+```
+Time delta: 0.3
+View range: 0.45
+Field of view: -0.9
+Separation: 0.13
+Alignment: 7
+Coherence: 8
+```
+### Second
+```
+Time delta: 0.25
+View range: 0.3
+Field of view: -0.3
+Separation: 0.6
+Alignment: 9
+Coherence: 7.5
+```
 
 ## Contact
 In case of any problems, contact me at my university mail: bartosz.kaczorowski2.stud@pw.edu.pl.

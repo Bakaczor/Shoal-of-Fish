@@ -301,7 +301,7 @@ __global__ void k_updateVelocity(Parameters params, int* cellStarts, int* cellEn
 
                     // If the neighbour is from the different shoal
                     } else {
-                        separation -= vector / distanceSq;
+                        separation -= 0.5f * vector / distanceSq;
                     }
                     ++count;
                 }
@@ -424,7 +424,7 @@ __global__ void k_copyTriangleToVBO(int N, glm::vec2* pos, glm::vec2* vel, float
     // Rescale from [0,1] x [0,1] space to [-1,1] x [-1,1] space
     glm::vec2 posScaled = 2.0f * pos[index] - 1.0f;
 
-    glm::vec2 velNormed = 0.01f * glm::normalize(vel[index]);
+    glm::vec2 velNormed = 0.005f * glm::normalize(vel[index]);
     glm::vec2 p1 = posScaled + 0.5f * glm::vec2(-velNormed.y, velNormed.x); // left
     glm::vec2 p2 = posScaled + 2.0f * velNormed; // top
     glm::vec2 p3 = posScaled + 0.5f * glm::vec2(velNormed.y, -velNormed.x); // right

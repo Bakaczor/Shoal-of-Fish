@@ -39,14 +39,14 @@ struct Parameters {
     // === SET DURING INITALIZATION ===
 
     bool WRAP = false;
-    int FISH_NUM = 500;
+    int FISH_NUM = 1000;
     int SHOAL_NUM = 3;
-    int CELL_N = 50;
+    int CELL_N = 20;
 
     // === SET AUTOMATICALLY ===
 
-    float CELL_LEN = 0.02f;
-    float CELL_LEN_INV = 50.0f;
+    float CELL_LEN = 0.05f;
+    float CELL_LEN_INV = 20.0f;
 
     void setCELL_N(int cell_n) {
         CELL_N = cell_n;
@@ -56,12 +56,12 @@ struct Parameters {
 
     // === MODIFIABLE DURING SIMULATION ===
 
-    float DT = 0.2f;
-    float R = 0.01f;
-    float COS_PHI = 0.0f;
-    float W_SEP = 0.005f;
-    float W_ALI = 2.0f;
-    float W_COH = 2.0f;
+    float DT = 0.3f;
+    float R = 0.02f;
+    float COS_PHI = -0.5f;
+    float W_SEP = 0.05f;
+    float W_ALI = 7.0f;
+    float W_COH = 7.0f;
 
     struct Blackhole {
         const float VEL = 0.01f;
