@@ -104,6 +104,3 @@ Separation: 0.6
 Alignment: 9
 Coherence: 7.5
 ```
-
-## Contact
-In case of any problems, contact me at my university mail: bartosz.kaczorowski2.stud@pw.edu.pl.
