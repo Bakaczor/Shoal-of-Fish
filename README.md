@@ -104,3 +104,6 @@ Separation: 0.6
 Alignment: 9
 Coherence: 7.5
 ```
+
+---
+*Copyright © 2024 Bartosz Kaczorowski*
