@@ -106,4 +106,4 @@ Coherence: 7.5
 ```
 
 ---
-*Copyright © 2024 Bartosz Kaczorowski*
+*Copyright © 2023 Bartosz Kaczorowski*
